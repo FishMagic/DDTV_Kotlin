@@ -1,0 +1,13 @@
+.gradle
+.idea
+build
+cliCommon/build
+cliLocal/build
+cliRemote/build
+guiCommon/build
+guiLocal/build
+guiRemote/build
+middleLayer/build
+recordBackend/build
+wsClient/build
+wsServer/build
