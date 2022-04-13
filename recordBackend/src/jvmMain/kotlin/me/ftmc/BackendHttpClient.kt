@@ -45,6 +45,8 @@ class CustomCookiesStorage(vararg cookies: Cookie) : CookiesStorage {
 
   fun getCookie(): List<Cookie> = storage
 
+  fun clearCookie() = storage.clear()
+
   override fun close() {}
 
 }

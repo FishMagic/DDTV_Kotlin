@@ -50,7 +50,10 @@ class RecordBackend(middleLayer: MiddleLayer) : Backend {
         when (message.type) {
           MessageType.LOGIN_STATE_CHANGE -> {
             val messageData = jsonProcessor.decodeFromString<LoginStateChangeMessageData>(message.data)
-            if (messageData.newValue == 0) {
+            if (messageData.newValue > 0) {
+              cookiesStorage.clearCookie()
+            }
+            if (messageData.newValue >= 0) {
               configSave()
             }
           }
