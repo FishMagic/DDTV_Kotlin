@@ -36,6 +36,7 @@ class LoginStateHolder(recordBackend: RecordBackend) {
             cookieUsable = false
           } else if (messageData.newValue == 0) {
             loginStateChecker.start()
+            cookieUsable = true
           }
         }
         messageSendChange.emit(message)
