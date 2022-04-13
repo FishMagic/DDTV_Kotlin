@@ -1,9 +1,7 @@
 package me.ftmc
 
-import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.runBlocking
 
-@ObsoleteCoroutinesApi
 fun main() {
   runBlocking {
     val middleLayer = MiddleLayer()

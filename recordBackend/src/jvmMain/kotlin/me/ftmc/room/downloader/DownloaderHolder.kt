@@ -2,19 +2,15 @@ package me.ftmc.room.downloader
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.channels.BroadcastChannel
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import me.ftmc.message.Message
 import me.ftmc.room.Room
 
-@ObsoleteCoroutinesApi
 class DownloaderHolder(room: Room) {
   private val coroutineScope = CoroutineScope(Job())
-  private val messageSendChannel = room.messageChannel
-  val messageChannel = BroadcastChannel<Message>(Channel.BUFFERED)
-  private val messageReceiveChannel = messageChannel.openSubscription()
+  private val messageSendChannel = room.messageReceiveChannel
+  val messageReceiveChannel = MutableSharedFlow<Message>()
   private val flvDownloader = FLVDownloader(this)
   private val danmakuDownloader = DanmakuDownloader(this)
 
@@ -27,7 +23,5 @@ class DownloaderHolder(room: Room) {
     danmakuDownloader.cancel()
     flvDownloader.cancel()
     coroutineScope.cancel()
-    messageReceiveChannel.cancel()
-    messageChannel.close()
   }
 }
