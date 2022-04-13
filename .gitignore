@@ -11,3 +11,5 @@ middleLayer/build
 recordBackend/build
 wsClient/build
 wsServer/build
+log/
+config.json
