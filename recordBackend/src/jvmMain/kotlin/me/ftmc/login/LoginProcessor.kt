@@ -125,6 +125,7 @@ class LoginProcessor(loginStateHolder: LoginStateHolder) {
         yield()
       }
     }
+    logger.info("[login processor] 登录流程已停止")
   }
 
   private suspend fun getQRCodeURL() {
@@ -195,6 +196,5 @@ class LoginProcessor(loginStateHolder: LoginStateHolder) {
 
   fun stop() {
     coroutineScope.cancel()
-    logger.info("[login processor] 登录流程已停止")
   }
 }
