@@ -2,10 +2,13 @@ package me.ftmc.action
 
 enum class ActionType {
   HELLO,
-  ROOM_ADD,
-  ROOM_DEL,
+  HEARTBEAT,
+  ROOM_COMMAND,
   ROOM_CONFIG_EDIT,
   RECORD_COMMAND,
   GLOBAL_CONFIG_EDIT,
+  SERVER_ADD,
+  SERVER_DEL_SELECT,
+  LOGIN_STATE_CHANGE,
   BYE
 }
