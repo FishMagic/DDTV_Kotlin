@@ -3,6 +3,7 @@ package me.ftmc
 import java.io.File
 import java.io.FileWriter
 import java.time.Instant
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.Serializable
 
 class LogObject(private val level: String, private val time: Long, val message: String) {
@@ -111,11 +112,15 @@ class LogHolder(platform: String, debugPrint: Boolean = false) {
 
   @Synchronized
   fun errorCatch(e: Throwable) {
-    loggerBuket.add(LogObject("ERROR", Instant.now().epochSecond, e.message.toString()))
-    e.printStackTrace()
-    val writer = FileWriter(logFile!!, true)
-    writer.write(e.stackTrace.toString() + "\n")
-    writer.flush()
-    writer.close()
+    if (e !is CancellationException) {
+      loggerBuket.add(LogObject("ERROR", Instant.now().epochSecond, e.message.toString()))
+      e.printStackTrace()
+      val writer = FileWriter(logFile!!, true)
+      e.stackTrace.forEach {
+        writer.write(it.toString())
+      }
+      writer.flush()
+      writer.close()
+    }
   }
 }

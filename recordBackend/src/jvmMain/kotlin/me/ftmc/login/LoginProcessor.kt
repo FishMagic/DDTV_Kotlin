@@ -13,8 +13,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -51,7 +54,7 @@ data class LoginResultSuccess(
   val code: Int, val status: Boolean, val ts: Int
 )
 
-class LoginProcessor(loginStateHolder: LoginStateHolder) {
+class LoginProcessor(loginStateHolder: LoginStateHolder) : LoginClass {
   private val coroutineScope = CoroutineScope(Job())
   private val messageSendChannel = loginStateHolder.messageChannel
   private val logger = LogHolder()
@@ -60,77 +63,95 @@ class LoginProcessor(loginStateHolder: LoginStateHolder) {
   private var qrRetryCount = 0
   private var listenerRetryCount = 0
 
-  fun start() {
-    logger.info("[login processor] 登录流程开始")
-    loginState = Int.MIN_VALUE
-    coroutineScope.launch(Dispatchers.IO) {
-      logger.info("[login processor] 开始获取登录二维码地址")
-      while (qrRetryCount <= 3 && loginState != 0) {
+  private val getQRCodeURL: suspend CoroutineScope.() -> Unit = {
+    logger.info("[login processor] 开始获取登录二维码地址")
+    while (loginState != 0) {
+      val delayTime = if (qrRetryCount < 60) qrRetryCount * 100000L else 60000L
+      try {
+        getQRCodeURL()
+        qrRetryCount = 0
+      } catch (e: SocketTimeoutException) {
+        logger.warn("[login processor] 发生网络错误")
+        qrRetryCount++
+        delay(delayTime)
+        continue
+      } catch (e: ConnectTimeoutException) {
+        logger.warn("[login processor] 发生连接错误")
+        qrRetryCount++
+        delay(delayTime)
+        continue
+      } catch (e: NoTransformationFoundException) {
+        logger.warn("[login processor] 解析登录二维码地址失败")
+        qrRetryCount++
+        continue
+      } catch (e: Exception) {
+        logger.errorCatch(e)
+        qrRetryCount++
+        delay(delayTime)
+        continue
+      }
+      delay(150000L)
+      logger.warn("[login processor] 二维码过期，正在重新获取")
+    }
+  }
+  private val getLoginStatus: suspend CoroutineScope.() -> Unit = {
+    logger.info("[login processor] 开始监听二维码扫描状态")
+    while (loginState != 0) {
+      if (oauthKey != null) {
         try {
-          getQRCodeURL()
-          qrRetryCount = 0
+          checkLoginProgress()
+          listenerRetryCount = 0
         } catch (e: SocketTimeoutException) {
           logger.warn("[login processor] 发生网络错误")
-          qrRetryCount++
+          listenerRetryCount++
           delay(1000L)
           continue
         } catch (e: ConnectTimeoutException) {
           logger.warn("[login processor] 发生连接错误")
-          qrRetryCount++
+          listenerRetryCount++
           delay(1000L)
           continue
         } catch (e: NoTransformationFoundException) {
           logger.warn("[login processor] 解析登录二维码地址失败")
-          qrRetryCount++
+          listenerRetryCount++
           continue
         } catch (e: Exception) {
           logger.errorCatch(e)
-          qrRetryCount++
+          listenerRetryCount++
           delay(1000L)
           continue
         }
-        delay(150000L)
-        logger.warn("[login processor] 二维码过期，正在重新获取")
+        delay(1000L)
       }
+      yield()
     }
-    coroutineScope.launch {
-      logger.info("[login processor] 开始监听二维码扫描状态")
-      while (listenerRetryCount <= 3 && loginState != 0) {
-        if (oauthKey != null) {
-          try {
-            checkLoginProgress()
-            listenerRetryCount = 0
-          } catch (e: SocketTimeoutException) {
-            logger.warn("[login processor] 发生网络错误")
-            listenerRetryCount++
-            delay(1000L)
-            continue
-          } catch (e: ConnectTimeoutException) {
-            logger.warn("[login processor] 发生连接错误")
-            listenerRetryCount++
-            delay(1000L)
-            continue
-          } catch (e: NoTransformationFoundException) {
-            logger.warn("[login processor] 解析登录二维码地址失败")
-            listenerRetryCount++
-            continue
-          } catch (e: Exception) {
-            logger.errorCatch(e)
-            listenerRetryCount++
-            delay(1000L)
-            continue
-          }
-          delay(1000L)
-        }
-        yield()
-      }
+  }
+
+  private var getQRCodeURLJob: Job? = null
+  private var getLoginStatusJob: Job? = null
+
+  override fun start() {
+    logger.debug("[login processor] 开始初始化")
+    runBlocking {
+      getQRCodeURLJob = coroutineScope.launch(block = getQRCodeURL)
+      getLoginStatusJob = coroutineScope.launch(block = getLoginStatus)
     }
-    logger.info("[login processor] 登录流程已停止")
+    logger.debug("[login processor] 初始化完成")
+  }
+
+  override fun stop() {
+    runBlocking {
+      getQRCodeURLJob?.cancelAndJoin()
+      getLoginStatusJob?.cancelAndJoin()
+    }
+    coroutineScope.cancel()
+    logger.debug("[login processor] 已停止")
   }
 
   private suspend fun getQRCodeURL() {
-    val qrCodeResponse =
+    val qrCodeResponse = withContext(Dispatchers.IO) {
       recordBackedHTTPClient.get("https://passport.bilibili.com/qrcode/getLoginUrl").body<LoginQRCodeURL>()
+    }
     val qrCodeData = qrCodeResponse.data
     oauthKey = qrCodeData.oauthKey
     messageSendChannel.emit(
@@ -140,19 +161,21 @@ class LoginProcessor(loginStateHolder: LoginStateHolder) {
     )
   }
 
-
   private suspend fun checkLoginProgress() {
-    val loginResultResponse = recordBackedHTTPClient.submitForm("https://passport.bilibili.com/qrcode/getLoginInfo",
-      formParameters = Parameters.build {
-        append("oauthKey", oauthKey!!)
-      }) {
-      headers {
-        append(
-          HttpHeaders.Referrer, "https://passport.bilibili.com/login"
-        )
+    val loginResultResponse = withContext(Dispatchers.IO) {
+      recordBackedHTTPClient.submitForm(
+        "https://passport.bilibili.com/qrcode/getLoginInfo",
+        formParameters = Parameters.build {
+          append("oauthKey", oauthKey!!)
+        }) {
+        headers {
+          append(
+            HttpHeaders.Referrer, "https://passport.bilibili.com/login"
+          )
+        }
       }
     }
-    val loginResultString = loginResultResponse.body<String>()
+    val loginResultString = withContext(Dispatchers.IO) { loginResultResponse.body<String>() }
     val loginResultResult = jsonProcessor.parseToJsonElement(loginResultString)
     val loginResultStatus = loginResultResult.jsonObject["status"]?.jsonPrimitive?.boolean ?: false
     if (loginResultStatus) {
@@ -192,9 +215,5 @@ class LoginProcessor(loginStateHolder: LoginStateHolder) {
     )
     logger.info("[login processor] 登录成功，停止登录流程")
     loginState = 0
-  }
-
-  fun stop() {
-    coroutineScope.cancel()
   }
 }

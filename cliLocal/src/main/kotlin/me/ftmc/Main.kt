@@ -3,20 +3,28 @@ package me.ftmc
 import kotlinx.coroutines.runBlocking
 
 fun main() {
-  LogHolder("cliLocal")
+  val logger = LogHolder("cliLocal")
   runBlocking {
-    val middleLayer = MiddleLayer()
-    val frontend = CliCommon(middleLayer)
-    val backend = RecordBackend(middleLayer)
-    Runtime.getRuntime().addShutdownHook(object : Thread() {
-      override fun run() {
-        runBlocking {
-          frontend.stop()
-          backend.stop()
+    try {
+      val middleLayer = MiddleLayer()
+      val frontend = CliCommon(middleLayer)
+      val backend = RecordBackend(middleLayer)
+      Runtime.getRuntime().addShutdownHook(object : Thread() {
+        override fun run() {
+          runBlocking {
+            try {
+              frontend.stop()
+              backend.stop()
+            } catch (e: Exception) {
+              logger.errorCatch(e)
+            }
+          }
         }
-      }
-    })
-    backend.start()
-    frontend.start()
+      })
+      backend.start()
+      frontend.start()
+    } catch (e: Exception) {
+      logger.errorCatch(e)
+    }
   }
 }

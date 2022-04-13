@@ -3,8 +3,10 @@ package me.ftmc.login
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.decodeFromString
 import me.ftmc.LogHolder
 import me.ftmc.RecordBackend
@@ -15,43 +17,52 @@ import me.ftmc.message.MessageType
 
 var cookieUsable = false
 
+interface LoginClass {
+  fun start()
+  fun stop()
+}
+
 class LoginStateHolder(recordBackend: RecordBackend) {
   private val coroutineScope = CoroutineScope(Job())
   private val messageSendChange = recordBackend.messageReceiveChannel
   val messageChannel = MutableSharedFlow<Message>()
-  private val loginProcessor = LoginProcessor(this)
-  private val loginStateChecker = LoginStateChecker(this)
+  private var loginClass: LoginClass? = null
   private val logger = LogHolder()
-  private var loginState = 0
 
-  fun start() {
-    logger.debug("[login state holder] 初始化开始")
-    coroutineScope.launch {
-      logger.debug("[login state holder] 消息上传队列监听开始")
-      messageChannel.collect { message ->
-        if (message.type == MessageType.LOGIN_STATE_CHANGE) {
-          val messageData = jsonProcessor.decodeFromString<LoginStateChangeMessageData>(message.data)
-          if (messageData.newValue > 0) {
-            loginProcessor.start()
-            cookieUsable = false
-          } else if (messageData.newValue == 0) {
-            loginStateChecker.start()
-            cookieUsable = true
-          }
+  private val messageCollection: suspend CoroutineScope.() -> Unit = {
+    logger.debug("[login state holder] 开始监听消息上传队列")
+    messageChannel.collect { message ->
+      if (message.type == MessageType.LOGIN_STATE_CHANGE) {
+        val messageData = jsonProcessor.decodeFromString<LoginStateChangeMessageData>(message.data)
+        if (messageData.newValue > 0) {
+          cookieUsable = false
+          loginClass?.stop()
+          loginClass = LoginProcessor(this@LoginStateHolder)
+        } else if (messageData.newValue == 0) {
+          cookieUsable = true
+          loginClass?.stop()
+          loginClass = LoginStateChecker(this@LoginStateHolder)
         }
-        messageSendChange.emit(message)
       }
-    }
-    if (!cookieUsable) {
-      loginProcessor.start()
-    } else {
-      loginStateChecker.start()
+      messageSendChange.emit(message)
     }
   }
 
+  private var messageCollectionJob: Job? = null
+
+  fun start() {
+    logger.debug("[login state holder] 开始初始化")
+    loginClass = if (cookieUsable) LoginStateChecker(this) else LoginProcessor(this)
+    loginClass?.start()
+    runBlocking { messageCollectionJob = coroutineScope.launch(block = messageCollection) }
+    logger.debug("[login state holder] 初始化完成")
+  }
+
   fun stop() {
-    loginProcessor.stop()
-    loginStateChecker.stop()
+    runBlocking {
+      loginClass?.stop()
+      messageCollectionJob?.cancelAndJoin()
+    }
     coroutineScope.cancel()
     logger.debug("[login state holder] 已停止")
   }

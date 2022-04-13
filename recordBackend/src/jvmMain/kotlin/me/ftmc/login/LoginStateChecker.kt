@@ -6,10 +6,14 @@ import io.ktor.client.network.sockets.ConnectTimeoutException
 import io.ktor.client.network.sockets.SocketTimeoutException
 import io.ktor.client.request.get
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.yield
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import me.ftmc.LogHolder
@@ -32,17 +36,21 @@ data class NavResultData(
   val isLogin: Boolean
 )
 
-class LoginStateChecker(loginStateHolder: LoginStateHolder) {
+class LoginStateChecker(loginStateHolder: LoginStateHolder) : LoginClass {
   private val coroutineScope = CoroutineScope(Job())
   private val messageSendChannel = loginStateHolder.messageChannel
   private val logger = LogHolder()
   private var retryCount = 0
 
-  fun start() {
-    coroutineScope.launch {
-      logger.info("[login state checker] 开始监听登录状态")
-      while (retryCount <= 3) {
-        logger.info("[login state checker] 开始获取登录状态")
+  private val loginStateCheck: suspend CoroutineScope.() -> Unit = {
+    logger.info("[login state checker] 开始获取登录状态")
+    while (true) {
+      if (!cookieUsable) {
+        retryCount = 0
+        yield()
+        continue
+      } else {
+        val delayTime = if (retryCount < 600) retryCount * 100000L else 600000L
         try {
           val httpResponse = recordBackedHTTPClient.get("https://api.bilibili.com/x/web-interface/nav")
           val navResult = httpResponse.body<NavResult>()
@@ -58,17 +66,16 @@ class LoginStateChecker(loginStateHolder: LoginStateHolder) {
                 )
               )
             )
-            this@LoginStateChecker.stop()
           }
         } catch (e: SocketTimeoutException) {
           logger.warn("[login state checker] 发生网络错误")
           retryCount++
-          delay(1000L)
+          delay(delayTime)
           continue
         } catch (e: ConnectTimeoutException) {
           logger.warn("[login state checker] 发生连接错误")
           retryCount++
-          delay(1000L)
+          delay(delayTime)
           continue
         } catch (e: NoTransformationFoundException) {
           logger.warn("[login state checker] 解析登录状态失败")
@@ -77,14 +84,26 @@ class LoginStateChecker(loginStateHolder: LoginStateHolder) {
         } catch (e: Exception) {
           logger.errorCatch(e)
           retryCount++
-          delay(1000L)
+          delay(delayTime)
           continue
         }
       }
     }
   }
 
-  fun stop() {
+  private var loginStateCheckJob: Job? = null
+
+  override fun start() {
+    logger.debug("[login state checker] 开始初始化")
+    runBlocking { loginStateCheckJob = coroutineScope.launch(context = Dispatchers.IO, block = loginStateCheck) }
+    logger.debug("[login state checker] 初始化完成")
+  }
+
+  override fun stop() {
+    runBlocking {
+      loginStateCheckJob?.cancelAndJoin()
+    }
     coroutineScope.cancel()
+    logger.debug("[login state checker] 已停止")
   }
 }
