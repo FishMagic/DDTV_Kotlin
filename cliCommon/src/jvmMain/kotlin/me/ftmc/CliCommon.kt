@@ -30,7 +30,10 @@ class CliCommon(middleLayer: MiddleLayer) : Frontend {
     coroutineScope.launch {
       while (isStarted) {
         if (scanner.hasNext()) {
-          actionChannel.emit(Action(ActionType.HELLO, scanner.next()))
+          try {
+            actionChannel.emit(Action(ActionType.HELLO, scanner.next()))
+          } catch (_: Exception) {
+          }
         }
       }
     }.join()
