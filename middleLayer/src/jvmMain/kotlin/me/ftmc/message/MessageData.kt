@@ -118,7 +118,7 @@ data class GlobalConfigEditMessageData(
  */
 @Serializable
 data class LoginStateChangeMessageData(
-  val newValue: String,
+  val newValue: Int,
   val msg: String
 )
 
