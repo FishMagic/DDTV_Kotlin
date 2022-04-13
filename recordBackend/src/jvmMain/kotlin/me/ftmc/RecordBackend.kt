@@ -9,8 +9,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import me.ftmc.action.ActionType
-import me.ftmc.config.ConfigClass
-import me.ftmc.config.ConfigHolder
 import me.ftmc.login.LoginStateHolder
 import me.ftmc.login.cookieUsable
 import me.ftmc.message.LoginStateChangeMessageData

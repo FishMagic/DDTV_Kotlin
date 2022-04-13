@@ -33,6 +33,7 @@ class LoginStateHolder(recordBackend: RecordBackend) {
           val messageData = jsonProcessor.decodeFromString<LoginStateChangeMessageData>(message.data)
           if (messageData.newValue > 0) {
             loginProcessor.start()
+            cookieUsable = false
           } else if (messageData.newValue == 0) {
             loginStateChecker.start()
           }
