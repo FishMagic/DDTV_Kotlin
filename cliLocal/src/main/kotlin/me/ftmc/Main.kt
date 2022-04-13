@@ -3,6 +3,7 @@ package me.ftmc
 import kotlinx.coroutines.runBlocking
 
 fun main() {
+  LogHolder("cliLocal")
   runBlocking {
     val middleLayer = MiddleLayer()
     val frontend = CliCommon(middleLayer)
