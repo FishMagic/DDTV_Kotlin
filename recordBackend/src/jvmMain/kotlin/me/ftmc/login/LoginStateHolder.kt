@@ -6,12 +6,8 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import me.ftmc.LogHolder
 import me.ftmc.RecordBackend
-import me.ftmc.jsonProcessor
-import me.ftmc.message.LoginStateChangeMessageData
 import me.ftmc.message.Message
 import me.ftmc.message.MessageType
 
@@ -33,19 +29,20 @@ class LoginStateHolder(recordBackend: RecordBackend) {
   private val messageCollection: suspend CoroutineScope.() -> Unit = {
     logger.debug("[login state holder] 开始监听消息上传队列")
     messageChannel.collect { message ->
-      if (message.type == MessageType.LOGIN_STATE_CHANGE) {
-        val messageData = jsonProcessor.decodeFromString<LoginStateChangeMessageData>(message.data)
-        if (messageData.newValue > 0) {
+      when (message.type) {
+        MessageType.LOGIN_FAILURE -> {
           cookieUsable = false
           loginClass?.stop()
           loginClass = null
-          globalLoginState = messageData.newValue
-        } else if (messageData.newValue == 0) {
+          globalLoginState = 2
+        }
+        MessageType.LOGIN_SUCCESS -> {
           cookieUsable = true
           loginClass?.stop()
           loginClass = LoginStateChecker(this@LoginStateHolder)
           globalLoginState = 0
         }
+        else -> {}
       }
       messageSendChange.emit(message)
     }
@@ -75,12 +72,7 @@ class LoginStateHolder(recordBackend: RecordBackend) {
       loginClass = LoginProcessor(this)
       loginClass?.start()
       globalLoginState = 3
-      messageSendChange.emit(
-        Message(
-          MessageType.LOGIN_STATE_CHANGE,
-          jsonProcessor.encodeToString(LoginStateChangeMessageData(3, "退出登录"))
-        )
-      )
+      messageSendChange.emit(Message(MessageType.LOGOUT))
     }
   }
 

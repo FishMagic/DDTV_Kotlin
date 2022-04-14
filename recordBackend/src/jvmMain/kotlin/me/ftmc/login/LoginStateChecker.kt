@@ -14,10 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import me.ftmc.LogHolder
-import me.ftmc.jsonProcessor
-import me.ftmc.message.LoginStateChangeMessageData
 import me.ftmc.message.Message
 import me.ftmc.message.MessageType
 import me.ftmc.recordBackedHTTPClient
@@ -57,14 +54,8 @@ class LoginStateChecker(loginStateHolder: LoginStateHolder) : LoginClass {
             logger.debug("[login state checker] 登录状态无异常")
             delay(3600000)
           } else {
-            logger.warn("[login state checker] 登录状态失效")
-            messageSendChannel.emit(
-              Message(
-                MessageType.LOGIN_STATE_CHANGE, jsonProcessor.encodeToString(
-                  LoginStateChangeMessageData(2, "登录失效")
-                )
-              )
-            )
+            logger.debug("[login state checker] 登录状态失效")
+            messageSendChannel.emit(Message(MessageType.LOGIN_FAILURE))
           }
         } catch (e: SocketException) {
           logger.warn("[login state checker] 发生网络错误")

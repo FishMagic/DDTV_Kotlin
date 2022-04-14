@@ -19,8 +19,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -28,7 +26,6 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import me.ftmc.LogHolder
 import me.ftmc.jsonProcessor
-import me.ftmc.message.LoginStateChangeMessageData
 import me.ftmc.message.Message
 import me.ftmc.message.MessageType
 import me.ftmc.recordBackedHTTPClient
@@ -150,11 +147,7 @@ class LoginProcessor(loginStateHolder: LoginStateHolder) : LoginClass {
     }
     val qrCodeData = qrCodeResponse.data
     oauthKey = qrCodeData.oauthKey
-    messageSendChannel.emit(
-      Message(
-        MessageType.LOGIN_QR_CODE_CHANGE, data = qrCodeData.url
-      )
-    )
+    messageSendChannel.emit(Message(MessageType.LOGIN_QR_CODE_CHANGE, data = qrCodeData.url))
   }
 
   private suspend fun checkLoginProgress() {
@@ -187,28 +180,14 @@ class LoginProcessor(loginStateHolder: LoginStateHolder) : LoginClass {
     )
     if (loginResultBody.data != loginState) {
       loginState = loginResultBody.data
-      messageSendChannel.emit(
-        Message(
-          MessageType.LOGIN_STATE_CHANGE, Json.encodeToString(
-            LoginStateChangeMessageData(newValue = loginResultBody.data, msg = loginResultBody.message)
-          )
-        )
-      )
+      messageSendChannel.emit(Message(MessageType.LOGIN_QR_SCAN))
     }
     return false
   }
 
   private suspend fun loginSuccess(loginResultResult: JsonElement) {
-    val loginResultBody = jsonProcessor.decodeFromJsonElement<LoginResultSuccess>(
-      loginResultResult
-    )
-    loginState = loginResultBody.code
-    messageSendChannel.emit(
-      Message(
-        MessageType.LOGIN_STATE_CHANGE,
-        Json.encodeToString(LoginStateChangeMessageData(newValue = loginResultBody.code, msg = "登录成功"))
-      )
-    )
-    logger.info("[login processor] 登录成功，停止登录流程")
+    loginState = 0
+    messageSendChannel.emit(Message(MessageType.LOGIN_SUCCESS))
+    logger.debug("[login processor] 登录成功，停止登录流程")
   }
 }

@@ -8,12 +8,10 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.decodeFromString
 import me.ftmc.action.ActionType
 import me.ftmc.login.LoginStateHolder
 import me.ftmc.login.cookieUsable
 import me.ftmc.login.globalLoginState
-import me.ftmc.message.LoginStateChangeMessageData
 import me.ftmc.message.Message
 import me.ftmc.message.MessageType
 import me.ftmc.room.RoomHolder
@@ -27,6 +25,7 @@ class RecordBackend(middleLayer: MiddleLayer) : Backend {
   private val roomHolder = RoomHolder(this)
   private val loginStateHolder = LoginStateHolder(this)
   private val logger = LogHolder()
+  private val configClass = configHolder.loadConfig()
 
   private val actionCollection: suspend CoroutineScope.() -> Unit = {
     logger.debug("[record backend] 动作下发队列监听开始")
@@ -38,7 +37,7 @@ class RecordBackend(middleLayer: MiddleLayer) : Backend {
             "Hello, ${action.data}"
           )
         )
-        ActionType.LOGIN_STATE_CHANGE -> {
+        ActionType.LOGOUT -> {
           cookieUsable = false
           cookiesStorage.clearCookie()
           configSave()
@@ -52,15 +51,14 @@ class RecordBackend(middleLayer: MiddleLayer) : Backend {
     logger.debug("[record backend] 消息上传队列监听开始")
     messageReceiveChannel.collect { message ->
       when (message.type) {
-        MessageType.LOGIN_STATE_CHANGE -> {
-          val messageData = jsonProcessor.decodeFromString<LoginStateChangeMessageData>(message.data)
-          if (messageData.newValue > 0) {
-            cookiesStorage.clearCookie()
-          }
-          if (messageData.newValue >= 0) {
-            configSave()
-          }
+        MessageType.LOGIN_SUCCESS -> {
+          configSave()
         }
+        MessageType.LOGIN_FAILURE -> {
+          cookiesStorage.clearCookie()
+          configSave()
+        }
+        else -> {}
       }
       messageSendChannel.emit(message)
     }
@@ -92,7 +90,7 @@ class RecordBackend(middleLayer: MiddleLayer) : Backend {
 
   private fun configSave() {
     logger.debug("[record backend] 开始保存配置文件")
-    val configClass = ConfigClass()
+    configClass.cookies.clear()
     cookiesStorage.getCookie().forEach {
       configClass.cookies.add(renderCookieHeader(it))
     }
@@ -102,7 +100,6 @@ class RecordBackend(middleLayer: MiddleLayer) : Backend {
 
   private fun configLoad() {
     logger.debug("[record backend] 开始加载配置文件")
-    val configClass = configHolder.loadConfig()
     configClass.cookies.forEach {
       cookiesStorage.addCookie(parseServerSetCookieHeader(it))
       cookieUsable = true
