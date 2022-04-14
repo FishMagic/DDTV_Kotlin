@@ -4,11 +4,13 @@ import java.util.Scanner
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import me.ftmc.action.Action
 import me.ftmc.action.ActionType
+import me.ftmc.action.LoginStateChangeActionDate
 
 class CliCommon(middleLayer: MiddleLayer) : Frontend {
   override val coroutineScope = CoroutineScope(Job())
@@ -26,11 +28,19 @@ class CliCommon(middleLayer: MiddleLayer) : Frontend {
   private val inputCollection: suspend CoroutineScope.() -> Unit = {
     while (true) {
       if (scanner.hasNext()) {
-        val string = scanner.nextLine()
-        if (string.lowercase() == "exit") {
+        val string = scanner.nextLine().lowercase()
+        if (string == "exit") {
           break
+        } else if (string == "logout") {
+          actionChannel.emit(
+            Action(
+              ActionType.LOGIN_STATE_CHANGE,
+              Json.encodeToString(LoginStateChangeActionDate(3, "退出登录"))
+            )
+          )
+        } else {
+          actionChannel.emit(Action(ActionType.HELLO, string))
         }
-        actionChannel.emit(Action(ActionType.HELLO, string))
       }
     }
   }
@@ -47,7 +57,6 @@ class CliCommon(middleLayer: MiddleLayer) : Frontend {
   }
 
   override suspend fun stop() {
-    logger.info("[cliCommon] 开始尝试停止")
     coroutineScope.cancel()
     scanner.close()
     logger.info("[cliCommon] 已停止")

@@ -37,6 +37,12 @@ class RecordBackend(middleLayer: MiddleLayer) : Backend {
             "Hello, ${action.data}"
           )
         )
+        ActionType.LOGIN_STATE_CHANGE -> {
+          cookieUsable = false
+          cookiesStorage.clearCookie()
+          configSave()
+          runBlocking { loginStateHolder.logout() }
+        }
         else -> {}
       }
     }
