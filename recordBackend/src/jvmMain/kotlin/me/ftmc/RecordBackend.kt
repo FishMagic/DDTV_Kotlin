@@ -28,7 +28,7 @@ class RecordBackend(middleLayer: MiddleLayer) : Backend {
   private val logger = LogHolder()
 
   private val actionCollection: suspend CoroutineScope.() -> Unit = {
-    logger.info("[record backend] 动作下发队列监听开始")
+    logger.debug("[record backend] 动作下发队列监听开始")
     actionReceiveChannel.collect { action ->
       when (action.type) {
         ActionType.HELLO -> messageSendChannel.emit(
@@ -42,7 +42,7 @@ class RecordBackend(middleLayer: MiddleLayer) : Backend {
     }
   }
   private val messageCollection: suspend CoroutineScope.() -> Unit = {
-    logger.info("[record backend] 消息上传队列监听开始")
+    logger.debug("[record backend] 消息上传队列监听开始")
     messageReceiveChannel.collect { message ->
       when (message.type) {
         MessageType.LOGIN_STATE_CHANGE -> {
@@ -84,22 +84,22 @@ class RecordBackend(middleLayer: MiddleLayer) : Backend {
   }
 
   private fun configSave() {
-    logger.info("[record backend] 开始保存配置文件")
+    logger.debug("[record backend] 开始保存配置文件")
     val configClass = ConfigClass()
     cookiesStorage.getCookie().forEach {
       configClass.cookies.add(renderCookieHeader(it))
     }
     configHolder.saveConfig(configClass)
-    logger.info("[record backend] 配置文件保存完成")
+    logger.debug("[record backend] 配置文件保存完成")
   }
 
   private fun configLoad() {
-    logger.info("[record backend] 开始加载配置文件")
+    logger.debug("[record backend] 开始加载配置文件")
     val configClass = configHolder.loadConfig()
     configClass.cookies.forEach {
       cookiesStorage.addCookie(parseServerSetCookieHeader(it))
       cookieUsable = true
     }
-    logger.info("[record backend] 配置文件加载完成")
+    logger.debug("[record backend] 配置文件加载完成")
   }
 }

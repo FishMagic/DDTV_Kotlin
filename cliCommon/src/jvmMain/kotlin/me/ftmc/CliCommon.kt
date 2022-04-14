@@ -18,7 +18,7 @@ class CliCommon(middleLayer: MiddleLayer) : Frontend {
   private val logger = LogHolder()
 
   private val messageCollection: suspend CoroutineScope.() -> Unit = {
-    logger.info("[cliCommon] 开始监听消息上传队列")
+    logger.debug("[cliCommon] 开始监听消息上传队列")
     messageReceiveChannel.collect { message ->
       println(message.data)
     }
