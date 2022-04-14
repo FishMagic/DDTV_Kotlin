@@ -81,7 +81,7 @@ class LogHolder(platform: String, debugPrint: Boolean = false) {
         }
         val logObject = LogObject("WARN", Instant.now().epochSecond, message)
         loggerBuket.add(logObject)
-        println()
+        System.err.println(logObject)
         val writer = FileWriter(logFile!!, true)
         writer.write(logObject.toString() + "\n")
         writer.flush()
