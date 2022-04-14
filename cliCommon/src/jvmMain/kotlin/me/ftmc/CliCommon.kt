@@ -26,9 +26,8 @@ class CliCommon(middleLayer: MiddleLayer) : Frontend {
         }
         MessageType.LOGIN_QR_CODE_CHANGE -> {
           logger.info("已获取到新的登录地址")
-          println("请自行生成该链接的二维码并扫描")
-          println("可以使用： 草料二维码")
-          println(message.data)
+          println("点击下方链接获取二维码")
+          println("https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${message.data}")
           println("该链接有效期150秒")
         }
         MessageType.LOGIN_QR_SCAN -> {
