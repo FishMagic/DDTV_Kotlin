@@ -12,6 +12,11 @@ import kotlinx.serialization.json.Json
 data class ConfigClass(val cookies: MutableList<String> = mutableListOf())
 
 class ConfigHolder {
+
+  companion object {
+    var configClass: ConfigClass? = null
+  }
+
   private val configFile = File("./config.json")
   private val jsonSaver = Json {
     prettyPrint = true
@@ -31,17 +36,20 @@ class ConfigHolder {
   }
 
   fun loadConfig(): ConfigClass {
-    if (!configFile.exists()) {
-      logger.debug("[config holder] 配置文件不存在")
-      configFile.createNewFile()
+    if (configClass == null) {
+      if (!configFile.exists()) {
+        logger.debug("[config holder] 配置文件不存在")
+        configFile.createNewFile()
+      }
+      configClass = try {
+        val configFIS = FileInputStream(configFile)
+        val configString = configFIS.readBytes().decodeToString()
+        jsonSaver.decodeFromString(configString)
+      } catch (_: Exception) {
+        logger.warn("[config holder] 配置文件读取失败")
+        ConfigClass()
+      }
     }
-    return try {
-      val configFIS = FileInputStream(configFile)
-      val configString = configFIS.readBytes().decodeToString()
-      jsonSaver.decodeFromString(configString)
-    } catch (_: Exception) {
-      logger.warn("[config holder] 配置文件读取失败")
-      ConfigClass()
-    }
+    return configClass!!
   }
 }
