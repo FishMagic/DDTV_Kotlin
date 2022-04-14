@@ -75,6 +75,7 @@ data class GlobalConfigEditActionData(
  * @param accessKeyId: 连接服务器的keyId
  * @param accessKeySecret: 连接服务器的keySecret
  */
+@Serializable
 data class ServerListAddActionData(
   val name: String,
   val url: String,
@@ -86,6 +87,7 @@ data class ServerListAddActionData(
  * @param command: 操作类型
  * @param id: 服务器id
  */
+@Serializable
 data class ServerDelSelectActionData(
   val command: Int,
   val id: String
@@ -95,6 +97,7 @@ data class ServerDelSelectActionData(
  * @param newValue: 新的值
  * @param msg: 需要发送的信息
  */
+@Serializable
 data class LoginStateChangeActionDate(
   val newValue: Int,
   val msg: String,
