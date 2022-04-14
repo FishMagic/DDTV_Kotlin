@@ -48,10 +48,6 @@ class CliCommon(middleLayer: MiddleLayer) : Frontend {
 
   override suspend fun stop() {
     logger.info("[cliCommon] 开始尝试停止")
-    runBlocking {
-      messageCollectionJob?.cancelAndJoin()
-      inputCollectionJob?.cancelAndJoin()
-    }
     coroutineScope.cancel()
     scanner.close()
     logger.info("[cliCommon] 已停止")

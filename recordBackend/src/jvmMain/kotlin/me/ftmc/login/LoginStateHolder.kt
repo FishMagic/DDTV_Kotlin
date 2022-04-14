@@ -3,7 +3,6 @@ package me.ftmc.login
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -61,7 +60,6 @@ class LoginStateHolder(recordBackend: RecordBackend) {
   fun stop() {
     runBlocking {
       loginClass?.stop()
-      messageCollectionJob?.cancelAndJoin()
     }
     coroutineScope.cancel()
     logger.debug("[login state holder] 已停止")

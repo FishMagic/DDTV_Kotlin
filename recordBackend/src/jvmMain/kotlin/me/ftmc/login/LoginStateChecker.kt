@@ -9,7 +9,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -100,9 +99,6 @@ class LoginStateChecker(loginStateHolder: LoginStateHolder) : LoginClass {
   }
 
   override fun stop() {
-    runBlocking {
-      loginStateCheckJob?.cancelAndJoin()
-    }
     coroutineScope.cancel()
     logger.debug("[login state checker] 已停止")
   }

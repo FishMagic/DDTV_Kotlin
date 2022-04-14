@@ -13,7 +13,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -140,10 +139,6 @@ class LoginProcessor(loginStateHolder: LoginStateHolder) : LoginClass {
   }
 
   override fun stop() {
-    runBlocking {
-      getQRCodeURLJob?.cancelAndJoin()
-      getLoginStatusJob?.cancelAndJoin()
-    }
     coroutineScope.cancel()
     logger.debug("[login processor] 已停止")
   }

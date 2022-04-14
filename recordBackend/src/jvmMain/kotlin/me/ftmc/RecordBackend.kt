@@ -5,7 +5,6 @@ import io.ktor.http.renderCookieHeader
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -79,8 +78,6 @@ class RecordBackend(middleLayer: MiddleLayer) : Backend {
     runBlocking {
       roomHolder.stop()
       loginStateHolder.stop()
-      actionCollectionJob?.cancelAndJoin()
-      messageCollectionJob?.cancelAndJoin()
     }
     coroutineScope.cancel()
     logger.info("[record backend] 已停止")
