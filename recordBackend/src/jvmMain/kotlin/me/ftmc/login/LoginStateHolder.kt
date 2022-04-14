@@ -16,6 +16,7 @@ import me.ftmc.message.Message
 import me.ftmc.message.MessageType
 
 var cookieUsable = false
+var globalLoginState = -4
 
 interface LoginClass {
   fun start()
@@ -38,10 +39,12 @@ class LoginStateHolder(recordBackend: RecordBackend) {
           cookieUsable = false
           loginClass?.stop()
           loginClass = null
+          globalLoginState = messageData.newValue
         } else if (messageData.newValue == 0) {
           cookieUsable = true
           loginClass?.stop()
           loginClass = LoginStateChecker(this@LoginStateHolder)
+          globalLoginState = 0
         }
       }
       messageSendChange.emit(message)
@@ -71,6 +74,7 @@ class LoginStateHolder(recordBackend: RecordBackend) {
       runBlocking { loginClass?.stop() }
       loginClass = LoginProcessor(this)
       loginClass?.start()
+      globalLoginState = 3
       messageSendChange.emit(
         Message(
           MessageType.LOGIN_STATE_CHANGE,

@@ -12,6 +12,7 @@ import kotlinx.serialization.decodeFromString
 import me.ftmc.action.ActionType
 import me.ftmc.login.LoginStateHolder
 import me.ftmc.login.cookieUsable
+import me.ftmc.login.globalLoginState
 import me.ftmc.message.LoginStateChangeMessageData
 import me.ftmc.message.Message
 import me.ftmc.message.MessageType
@@ -105,6 +106,7 @@ class RecordBackend(middleLayer: MiddleLayer) : Backend {
     configClass.cookies.forEach {
       cookiesStorage.addCookie(parseServerSetCookieHeader(it))
       cookieUsable = true
+      globalLoginState = 0
     }
     logger.debug("[record backend] 配置文件加载完成")
   }
