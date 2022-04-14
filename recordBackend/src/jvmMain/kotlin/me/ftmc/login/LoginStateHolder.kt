@@ -11,8 +11,13 @@ import me.ftmc.RecordBackend
 import me.ftmc.message.Message
 import me.ftmc.message.MessageType
 
-var cookieUsable = false
-var globalLoginState = -4
+/**
+ * 0 -> 未登录
+ * 1 -> 已登录
+ * 2 -> 登录失效
+ * 3 -> 登录中
+ */
+var globalLoginState = 0
 
 interface LoginClass {
   fun start()
@@ -31,16 +36,14 @@ class LoginStateHolder(recordBackend: RecordBackend) {
     messageChannel.collect { message ->
       when (message.type) {
         MessageType.LOGIN_FAILURE -> {
-          cookieUsable = false
           loginClass?.stop()
           loginClass = null
           globalLoginState = 2
         }
         MessageType.LOGIN_SUCCESS -> {
-          cookieUsable = true
           loginClass?.stop()
           loginClass = LoginStateChecker(this@LoginStateHolder)
-          globalLoginState = 0
+          globalLoginState = 1
         }
         else -> {}
       }
@@ -52,7 +55,7 @@ class LoginStateHolder(recordBackend: RecordBackend) {
 
   fun start() {
     logger.debug("[login state holder] 开始初始化")
-    loginClass = if (cookieUsable) LoginStateChecker(this) else LoginProcessor(this)
+    loginClass = if (globalLoginState != 1) LoginStateChecker(this) else LoginProcessor(this)
     loginClass?.start()
     runBlocking { messageCollectionJob = coroutineScope.launch(block = messageCollection) }
     logger.debug("[login state holder] 初始化完成")

@@ -41,7 +41,7 @@ class LoginStateChecker(loginStateHolder: LoginStateHolder) : LoginClass {
   private val loginStateCheck: suspend CoroutineScope.() -> Unit = {
     logger.info("[login state checker] 开始获取登录状态")
     while (true) {
-      if (!cookieUsable) {
+      if (globalLoginState != 1) {
         retryCount = 0
         yield()
         continue

@@ -10,7 +10,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import me.ftmc.action.ActionType
 import me.ftmc.login.LoginStateHolder
-import me.ftmc.login.cookieUsable
 import me.ftmc.login.globalLoginState
 import me.ftmc.message.Message
 import me.ftmc.message.MessageType
@@ -38,7 +37,7 @@ class RecordBackend(middleLayer: MiddleLayer) : Backend {
           )
         )
         ActionType.LOGOUT -> {
-          cookieUsable = false
+          globalLoginState = 3
           cookiesStorage.clearCookie()
           configSave()
           runBlocking { loginStateHolder.logout() }
@@ -102,8 +101,7 @@ class RecordBackend(middleLayer: MiddleLayer) : Backend {
     logger.debug("[record backend] 开始加载配置文件")
     configClass.cookies.forEach {
       cookiesStorage.addCookie(parseServerSetCookieHeader(it))
-      cookieUsable = true
-      globalLoginState = 0
+      globalLoginState = 1
     }
     logger.debug("[record backend] 配置文件加载完成")
   }
