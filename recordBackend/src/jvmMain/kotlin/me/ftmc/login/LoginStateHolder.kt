@@ -37,7 +37,7 @@ class LoginStateHolder(recordBackend: RecordBackend) {
         if (messageData.newValue > 0) {
           cookieUsable = false
           loginClass?.stop()
-          loginClass = LoginProcessor(this@LoginStateHolder)
+          loginClass = null
         } else if (messageData.newValue == 0) {
           cookieUsable = true
           loginClass?.stop()
