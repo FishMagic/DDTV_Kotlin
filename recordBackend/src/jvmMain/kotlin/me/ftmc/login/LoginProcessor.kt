@@ -58,7 +58,7 @@ class LoginProcessor(loginStateHolder: LoginStateHolder) : LoginClass {
   private val messageSendChannel = loginStateHolder.messageChannel
   private val logger = LogHolder()
   private var oauthKey: String? = null
-  private var loginState = Int.MIN_VALUE
+  private var loginState = -4
   private var qrRetryCount = 0
   private var listenerRetryCount = 0
 
@@ -131,6 +131,7 @@ class LoginProcessor(loginStateHolder: LoginStateHolder) : LoginClass {
 
   override fun start() {
     logger.debug("[login processor] 开始初始化")
+    loginState = -4
     runBlocking {
       getQRCodeURLJob = coroutineScope.launch(block = getQRCodeURL)
       getLoginStatusJob = coroutineScope.launch(block = getLoginStatus)
@@ -209,6 +210,5 @@ class LoginProcessor(loginStateHolder: LoginStateHolder) : LoginClass {
       )
     )
     logger.info("[login processor] 登录成功，停止登录流程")
-    loginState = 0
   }
 }
