@@ -3,12 +3,12 @@ package me.ftmc.login
 import io.ktor.client.call.NoTransformationFoundException
 import io.ktor.client.call.body
 import io.ktor.client.network.sockets.ConnectTimeoutException
-import io.ktor.client.network.sockets.SocketTimeoutException
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.Parameters
+import java.net.SocketException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -69,7 +69,7 @@ class LoginProcessor(loginStateHolder: LoginStateHolder) : LoginClass {
       try {
         getQRCodeURL()
         qrRetryCount = 0
-      } catch (e: SocketTimeoutException) {
+      } catch (e: SocketException) {
         logger.warn("[login processor] 发生网络错误")
         qrRetryCount++
         delay(delayTime)
@@ -100,7 +100,7 @@ class LoginProcessor(loginStateHolder: LoginStateHolder) : LoginClass {
         try {
           checkLoginProgress()
           listenerRetryCount = 0
-        } catch (e: SocketTimeoutException) {
+        } catch (e: SocketException) {
           logger.warn("[login processor] 发生网络错误")
           listenerRetryCount++
           delay(1000L)

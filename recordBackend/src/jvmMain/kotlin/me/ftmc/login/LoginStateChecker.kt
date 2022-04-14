@@ -3,8 +3,8 @@ package me.ftmc.login
 import io.ktor.client.call.NoTransformationFoundException
 import io.ktor.client.call.body
 import io.ktor.client.network.sockets.ConnectTimeoutException
-import io.ktor.client.network.sockets.SocketTimeoutException
 import io.ktor.client.request.get
+import java.net.SocketException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -66,7 +66,7 @@ class LoginStateChecker(loginStateHolder: LoginStateHolder) : LoginClass {
               )
             )
           }
-        } catch (e: SocketTimeoutException) {
+        } catch (e: SocketException) {
           logger.warn("[login state checker] 发生网络错误")
           retryCount++
           delay(delayTime)
