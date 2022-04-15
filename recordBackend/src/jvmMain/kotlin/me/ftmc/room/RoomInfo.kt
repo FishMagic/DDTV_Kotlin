@@ -1,10 +1,12 @@
 package me.ftmc.room
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 class RoomInfo(
-  val uid: String,
-  val username: String,
-  val roomId: Long,
-  val title: String,
-  val liveState: Boolean,
-  val recordState: Boolean
+  var username: String = "",
+  var roomId: Long = 0,
+  var title: String = "",
+  var liveState: Boolean = false,
+  var recordState: Boolean = false
 )

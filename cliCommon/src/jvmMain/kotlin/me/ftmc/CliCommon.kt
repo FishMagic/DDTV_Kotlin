@@ -39,6 +39,18 @@ class CliCommon(middleLayer: MiddleLayer) : Frontend {
         MessageType.LOGIN_FAILURE -> {
           logger.warn("登录已失效")
         }
+        MessageType.LIVE_START -> {
+          logger.info("${message.data} 开播了")
+        }
+        MessageType.LIVE_STOP -> {
+          logger.info("${message.data} 下播了")
+        }
+        MessageType.ROOM_ADD -> {
+          logger.info("${message.data} 房间已添加")
+        }
+        MessageType.ROOM_DEL -> {
+          logger.info("${message.data} 房间已删除")
+        }
       }
     }
   }
@@ -48,10 +60,8 @@ class CliCommon(middleLayer: MiddleLayer) : Frontend {
         val string = scanner.nextLine().lowercase()
         if (string == "exit") {
           break
-        } else if (string == "logout") {
-          actionChannel.emit(Action(ActionType.LOGOUT))
         } else {
-          actionChannel.emit(Action(ActionType.HELLO, string))
+          inputProcessor(string)
         }
       }
     }
@@ -59,6 +69,24 @@ class CliCommon(middleLayer: MiddleLayer) : Frontend {
 
   private var messageCollectionJob: Job? = null
   private var inputCollectionJob: Job? = null
+
+  private suspend fun inputProcessor(inputString: String) {
+    val args = inputString.lowercase().split(' ')
+    if (args[0] == "room") {
+      if (args[1] == "add") {
+        actionChannel.emit(Action(ActionType.ROOM_ADD, data = args[2]))
+        return
+      } else if (args[2] == "del") {
+        actionChannel.emit(Action(ActionType.ROOM_DEL, data = args[2]))
+        return
+      }
+    }
+    if (args[0] == "logout") {
+      actionChannel.emit(Action(ActionType.LOGOUT))
+      return
+    }
+    logger.warn("[cliCommon] 无法识别的指令")
+  }
 
   override suspend fun start() {
     logger.info("[cliCommon] 初始化开始")

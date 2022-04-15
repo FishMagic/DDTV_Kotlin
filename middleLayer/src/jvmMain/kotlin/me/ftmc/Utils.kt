@@ -4,6 +4,7 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import kotlinx.serialization.Serializable
 
 val formatTimeToISO: (Long) -> String = { longTime ->
   val dataTimeFormat = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
@@ -30,3 +31,14 @@ fun formatDataUnit(byte: Long): String {
     String.format("%.2f PiB", (byte / 1024L / 1024L / 1024L / 1024L).toFloat() / 1024)
   }
 }
+
+@Serializable
+data class RoomData(
+  val username: String,
+  val roomId: Long,
+  val title: String,
+  val isRecording: Boolean,
+  val recordStartSecond: Long,
+  val isAutoRecord: Boolean,
+  val isDanmakuRecord: Boolean
+)

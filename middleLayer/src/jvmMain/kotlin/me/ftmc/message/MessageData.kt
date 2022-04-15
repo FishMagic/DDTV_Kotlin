@@ -78,13 +78,9 @@ data class RecordCommandMessageData(
 
 /**
  * @param uid: 发生变化的房间的uid
- * @param newValue: 新的值
  */
 @Serializable
-data class LiveStateMessageData(
-  val uid: Long,
-  val newValue: String
-)
+data class LiveStateMessageData(val uid: Long)
 
 /**
  * @param uid: 发生变化的房间的uid

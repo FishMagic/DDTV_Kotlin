@@ -13,10 +13,14 @@ class DownloaderHolder(room: Room) {
   val messageReceiveChannel = MutableSharedFlow<Message>()
   private val flvDownloader = FLVDownloader(this)
   private val danmakuDownloader = DanmakuDownloader(this)
+  var recordStartTime: Long = 0
 
-  fun start() {
-    flvDownloader.start()
-    danmakuDownloader.start()
+  fun recordStart() {
+
+  }
+
+  fun getIsRecording(): Boolean {
+    return false
   }
 
   fun cancel() {

@@ -42,6 +42,23 @@ class RecordBackend(middleLayer: MiddleLayer) : Backend {
           configSave()
           runBlocking { loginStateHolder.logout() }
         }
+        ActionType.ROOM_ADD -> {
+          val tempRoomConfig = RoomConfig()
+          val tempUid = action.data.toLongOrNull()
+          if (tempUid != null) {
+            roomHolder.addRoom(tempUid, tempRoomConfig)
+            configClass.roomList[tempUid] = tempRoomConfig
+          }
+          configSave()
+        }
+        ActionType.ROOM_DEL -> {
+          val tempUid = action.data.toLongOrNull()
+          if (tempUid != null) {
+            roomHolder.delRoom(tempUid)
+            configClass.roomList.remove(tempUid)
+          }
+          configSave()
+        }
         else -> {}
       }
     }
@@ -103,6 +120,7 @@ class RecordBackend(middleLayer: MiddleLayer) : Backend {
       cookiesStorage.addCookie(parseServerSetCookieHeader(it))
       globalLoginState = 1
     }
+    roomHolder.setRoomList(configClass.roomList)
     logger.debug("[record backend] 配置文件加载完成")
   }
 }
