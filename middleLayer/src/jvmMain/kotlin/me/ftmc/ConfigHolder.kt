@@ -9,7 +9,13 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 @Serializable
-data class ConfigClass(val cookies: MutableList<String> = mutableListOf())
+data class ConfigClass(
+  val cookies: MutableList<String> = mutableListOf(),
+  val roomList: MutableMap<Long, RoomConfig> = mutableMapOf()
+)
+
+@Serializable
+data class RoomConfig(var isAutoRecord: Boolean = false, var isDanmakuRecord: Boolean = false)
 
 class ConfigHolder {
 
