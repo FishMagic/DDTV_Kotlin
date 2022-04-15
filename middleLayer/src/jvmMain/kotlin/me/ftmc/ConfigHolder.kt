@@ -15,13 +15,12 @@ class ConfigHolder {
 
   companion object {
     var configClass: ConfigClass? = null
+    private val configFile = File("./config.json")
+    private val jsonSaver = Json {
+      prettyPrint = true
+    }
+    private val logger = LogHolder()
   }
-
-  private val configFile = File("./config.json")
-  private val jsonSaver = Json {
-    prettyPrint = true
-  }
-  private val logger = LogHolder()
 
   fun saveConfig() {
     if (!configFile.exists()) {
