@@ -93,7 +93,7 @@ class RecordBackend(middleLayer: MiddleLayer) : Backend {
     cookiesStorage.getCookie().forEach {
       configClass.cookies.add(renderCookieHeader(it))
     }
-    configHolder.saveConfig(configClass)
+    configHolder.saveConfig()
     logger.debug("[record backend] 配置文件保存完成")
   }
 

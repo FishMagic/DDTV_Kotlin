@@ -23,7 +23,7 @@ class ConfigHolder {
   }
   private val logger = LogHolder()
 
-  fun saveConfig(configClass: ConfigClass) {
+  fun saveConfig() {
     if (!configFile.exists()) {
       logger.debug("[config holder] 配置文件不存在")
       configFile.createNewFile()
