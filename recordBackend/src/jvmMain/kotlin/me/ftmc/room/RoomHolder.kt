@@ -81,8 +81,10 @@ class RoomHolder(backend: RecordBackend) {
   }
 
   fun addRoom(uid: Long, config: RoomConfig) {
-    roomMap[uid] = Room(uid, config, this)
-    coroutineScope.launch { messageSendChannel.emit(Message(MessageType.ROOM_ADD, uid.toString())) }
+    if (roomMap[uid] != null) {
+      roomMap[uid] = Room(uid, config, this)
+      coroutineScope.launch { messageSendChannel.emit(Message(MessageType.ROOM_ADD, uid.toString())) }
+    }
   }
 
   fun delRoom(uid: Long) {
