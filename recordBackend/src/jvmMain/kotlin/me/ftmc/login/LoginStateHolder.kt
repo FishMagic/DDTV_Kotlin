@@ -55,7 +55,7 @@ class LoginStateHolder(recordBackend: RecordBackend) {
 
   fun start() {
     logger.debug("[login state holder] 开始初始化")
-    loginClass = if (globalLoginState != 1) LoginStateChecker(this) else LoginProcessor(this)
+    loginClass = if (globalLoginState == 1) LoginStateChecker(this) else LoginProcessor(this)
     loginClass?.start()
     runBlocking { messageCollectionJob = coroutineScope.launch(block = messageCollection) }
     logger.debug("[login state holder] 初始化完成")
