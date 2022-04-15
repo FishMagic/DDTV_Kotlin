@@ -69,13 +69,13 @@ class LoginStateHolder(recordBackend: RecordBackend) {
     logger.debug("[login state holder] 已停止")
   }
 
-  suspend fun logout() {
+  fun logout() {
     if (loginClass !is LoginProcessor) {
       runBlocking { loginClass?.stop() }
       loginClass = LoginProcessor(this)
       loginClass?.start()
       globalLoginState = 3
-      messageSendChange.emit(Message(MessageType.LOGOUT))
+      runBlocking { messageSendChange.emit(Message(MessageType.LOGOUT)) }
     }
   }
 
